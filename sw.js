@@ -1,9 +1,11 @@
 // Service Worker for Tic Tac Extreme PWA
-const CACHE_NAME = 'tictac-extreme-v1';
+const CACHE_NAME = 'tictac-extreme-v3-orientation';
 const ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
