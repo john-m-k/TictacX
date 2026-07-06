@@ -360,6 +360,36 @@ body{
   .container{ flex-direction:column; }
   .left-panel,.right-panel{ width:100%; }
 }
+
+/* Installed PWA: obey phone orientation and fit better in landscape */
+@media (orientation: landscape) and (max-height:560px){
+  body{ overflow:hidden; }
+  #gameContainer{ padding:8px; align-items:flex-start; }
+  .container{
+    max-width:none; min-height:calc(100vh - 16px);
+    padding:10px; gap:12px; border-radius:16px;
+    flex-direction:row; align-items:center;
+  }
+  .left-panel{ width:42%; }
+  .right-panel{ width:58%; gap:8px; }
+  h1{ font-size:clamp(20px,4vw,30px); margin-bottom:8px; }
+  .settings{ gap:6px; margin-bottom:8px; }
+  select,input{ padding:8px; font-size:13px; border-radius:9px; }
+  .scoreboard{ gap:6px; margin-bottom:8px; }
+  .score{ padding:8px; border-radius:10px; }
+  .score h2{ font-size:10px; }
+  .score span{ font-size:20px; }
+  .timer-box{ padding:8px; margin-bottom:8px; }
+  .timer{ font-size:16px; margin-bottom:3px; }
+  .status{ font-size:16px; min-height:22px; margin-bottom:6px; }
+  .bottom-controls{ padding:8px; gap:6px; margin-top:8px; }
+  .bottom-controls button{ padding:8px; font-size:13px; }
+  .board{ width:min(54vw,72vh,420px); height:min(54vw,72vh,420px); gap:7px; }
+  .cell{ border-radius:12px; font-size:clamp(34px,12vh,68px); }
+  #chatBox{ max-width:min(54vw,420px); padding:8px; gap:5px; }
+  #chatMessages{ height:52px; }
+  .footer{ display:none; }
+}
 h1{ font-size:36px; margin-bottom:16px; color:#60a5fa; text-shadow:0 0 15px #3b82f6; }
 .settings{ display:grid; gap:10px; margin-bottom:16px; }
 select,input{
@@ -633,6 +663,36 @@ button:hover{ transform:scale(1.03); }
 .theme-pill:hover{ border-color:#60a5fa; color:white; }
 .theme-pill.active{ background:#2563eb; color:white; border-color:#60a5fa; }
 
+/* Music + multiplayer settings */
+.settings-note{
+  font-size:11px; color:var(--text-dim); line-height:1.45; margin-top:-2px;
+}
+.settings-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
+.settings-mini-btn{
+  padding:8px 10px; border-radius:10px; font-size:12px;
+  background:#1e293b; color:#cbd5e1; border:1px solid rgba(255,255,255,0.08);
+}
+.settings-mini-btn:hover{ border-color:#60a5fa; color:white; }
+.song-status{
+  width:100%; font-size:12px; color:#a3e635; background:rgba(15,23,42,0.65);
+  border:1px solid rgba(96,165,250,0.12); border-radius:10px; padding:8px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.music-file-label{
+  width:100%; display:block; text-align:center; padding:9px 10px; border-radius:10px;
+  background:#2563eb; color:white; font-size:12px; font-weight:bold; cursor:pointer;
+}
+.music-file-label input{ display:none; }
+.multiplayer-link-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.multiplayer-link-row button{ font-size:12px; padding:9px; }
+.mp-switch-btn{
+  background:#1e293b; border:1px solid rgba(255,255,255,0.10); color:#cbd5e1;
+  font-size:12px; padding:9px;
+}
+body.theme-light .settings-mini-btn,
+body.theme-light .mp-switch-btn{ background:#e2e8f0; color:#0f172a; border-color:rgba(0,0,0,0.08); }
+body.theme-light .song-status{ background:rgba(255,255,255,0.75); color:#15803d; }
+
 /* ===== NAME PROMPT MODAL ===== */
 #namePromptOverlay{
   display:none; position:fixed; inset:0;
@@ -838,6 +898,7 @@ body.theme-light .hc-time  { color:#475569; }
     <input id="onlineJoinId" placeholder="Enter 4-digit room code" maxlength="4"
            style="text-align:center;letter-spacing:4px;font-size:20px;">
     <button class="blue-btn" onclick="joinRoom('online')">Join Room</button>
+    <button class="mp-switch-btn" onclick="switchMultiplayerMode('hotspot', true)">📡 Switch to Hotspot Mode</button>
     <div id="roomCodeDisplay"></div>
     <p class="code-hint" id="onlineCodeHint" style="display:none">Share this code with your friend</p>
   </div>
@@ -854,6 +915,7 @@ body.theme-light .hc-time  { color:#475569; }
     <input id="hotspotJoinId" placeholder="Enter 4-digit room code" maxlength="4"
            style="text-align:center;letter-spacing:4px;font-size:20px;">
     <button class="orange-btn" onclick="joinRoom('hotspot')">Join Room</button>
+    <button class="mp-switch-btn" onclick="switchMultiplayerMode('online', true)">🌐 Switch to Online Mode</button>
     <div id="hotspotCodeDisplay"
          style="display:none;background:#1e293b;border-radius:10px;padding:10px;text-align:center;
                 font-size:30px;font-weight:bold;letter-spacing:10px;color:#fb923c;"></div>
@@ -891,6 +953,38 @@ body.theme-light .hc-time  { color:#475569; }
           <button class="theme-pill" id="pill-system" onclick="setTheme('system')">💻 System</button>
         </div>
       </div>
+    </div>
+
+    <div class="settings-section">
+      <!-- Music -->
+      <div class="settings-row">
+        <div class="settings-label"><span>🎵</span>Music</div>
+        <label class="toggle-switch" title="Turn background music on/off">
+          <input type="checkbox" id="musicToggle" onchange="toggleMusicSetting(this.checked)">
+          <span class="toggle-track"></span>
+          <span class="toggle-knob"></span>
+        </label>
+      </div>
+      <div class="song-status" id="songStatus">Built-in beat ready</div>
+      <label class="music-file-label">
+        📁 Link / Save Song Offline
+        <input id="songFileInput" type="file" accept="audio/*" onchange="importSongToLocalStorage(event)">
+      </label>
+      <div class="settings-actions">
+        <button class="settings-mini-btn" onclick="playMusicFromSettings()">▶ Test</button>
+        <button class="settings-mini-btn" onclick="clearSavedSong()">🗑 Clear Song</button>
+      </div>
+      <div class="settings-note">Imported audio is stored in this browser's localStorage, so it can play when the PWA is opened offline.</div>
+    </div>
+
+    <div class="settings-section">
+      <!-- Multiplayer switch -->
+      <div class="settings-label"><span>🔗</span>Quick Multiplayer Link</div>
+      <div class="multiplayer-link-row">
+        <button class="purple-btn" onclick="switchMultiplayerMode('online', true)">🌐 Online</button>
+        <button class="orange-btn" onclick="switchMultiplayerMode('hotspot', true)">📡 Hotspot</button>
+      </div>
+      <div class="settings-note">Jump between Online and Hotspot without hunting through the main mode selector.</div>
     </div>
   </div>
 </div>
@@ -1692,6 +1786,171 @@ window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", ()
 });
 
 // ══════════════════════════════════════════════
+//  MUSIC SYSTEM — saved song + offline localStorage playback
+// ══════════════════════════════════════════════
+const MUSIC_ENABLED_KEY = "tte_music_enabled";
+const MUSIC_DATA_KEY    = "tte_music_data_url";
+const MUSIC_NAME_KEY    = "tte_music_name";
+let musicEnabled = localStorage.getItem(MUSIC_ENABLED_KEY) === "1";
+let bgMusicAudio = null;
+let synthMusic = { ctx:null, master:null, timers:[], step:0, playing:false };
+
+function initMusicSystem(){
+  const toggle = document.getElementById("musicToggle");
+  if(toggle) toggle.checked = musicEnabled;
+  loadSavedSongIntoAudio();
+  updateSongStatus();
+}
+
+function getSavedSongName(){
+  return localStorage.getItem(MUSIC_NAME_KEY) || "";
+}
+
+function loadSavedSongIntoAudio(){
+  const dataUrl = localStorage.getItem(MUSIC_DATA_KEY);
+  if(dataUrl){
+    if(!bgMusicAudio){
+      bgMusicAudio = new Audio();
+      bgMusicAudio.loop = true;
+      bgMusicAudio.preload = "auto";
+      bgMusicAudio.volume = 0.42;
+    }
+    bgMusicAudio.src = dataUrl;
+  }
+}
+
+function updateSongStatus(msg){
+  const el = document.getElementById("songStatus");
+  if(!el) return;
+  if(msg){ el.textContent = msg; return; }
+  const savedName = getSavedSongName();
+  el.textContent = savedName ? `Saved offline: ${savedName}` : "Built-in beat ready — import a song to replace it";
+}
+
+function toggleMusicSetting(enabled){
+  musicEnabled = !!enabled;
+  localStorage.setItem(MUSIC_ENABLED_KEY, musicEnabled ? "1" : "0");
+  if(musicEnabled){
+    startMusic();
+  } else {
+    stopMusic();
+  }
+  updateSongStatus(musicEnabled ? "Music on" : "Music off");
+}
+
+function playMusicFromSettings(){
+  const toggle = document.getElementById("musicToggle");
+  if(toggle) toggle.checked = true;
+  toggleMusicSetting(true);
+}
+
+function importSongToLocalStorage(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith("audio/")){
+    updateSongStatus("⚠ Please choose an audio file");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      localStorage.setItem(MUSIC_DATA_KEY, reader.result);
+      localStorage.setItem(MUSIC_NAME_KEY, file.name);
+      loadSavedSongIntoAudio();
+      updateSongStatus(`Saved offline: ${file.name}`);
+      if(musicEnabled) startMusic();
+    }catch(err){
+      updateSongStatus("⚠ Song too large for localStorage. Try a shorter MP3/OGG.");
+      console.warn("Could not save song to localStorage", err);
+    }
+  };
+  reader.onerror = () => updateSongStatus("⚠ Could not read that song file");
+  reader.readAsDataURL(file);
+}
+
+function clearSavedSong(){
+  stopMusic();
+  localStorage.removeItem(MUSIC_DATA_KEY);
+  localStorage.removeItem(MUSIC_NAME_KEY);
+  if(bgMusicAudio){ bgMusicAudio.removeAttribute("src"); bgMusicAudio.load(); }
+  const toggle = document.getElementById("musicToggle");
+  if(toggle) toggle.checked = musicEnabled;
+  updateSongStatus("Saved song cleared — using built-in beat");
+  if(musicEnabled) startMusic();
+}
+
+function startMusic(){
+  if(!musicEnabled) return;
+  loadSavedSongIntoAudio();
+  const hasSavedSong = !!localStorage.getItem(MUSIC_DATA_KEY);
+  if(hasSavedSong && bgMusicAudio){
+    stopSynthMusic();
+    bgMusicAudio.volume = 0.42;
+    bgMusicAudio.play().catch(()=>{
+      updateSongStatus("Tap ▶ Test or Start Match to allow music");
+    });
+  } else {
+    if(bgMusicAudio) bgMusicAudio.pause();
+    startSynthMusic();
+  }
+}
+
+function stopMusic(){
+  if(bgMusicAudio) bgMusicAudio.pause();
+  stopSynthMusic();
+}
+
+function startSynthMusic(){
+  if(synthMusic.playing) return;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if(!AudioCtx){ updateSongStatus("⚠ Music not supported on this browser"); return; }
+  if(!synthMusic.ctx){
+    synthMusic.ctx = new AudioCtx();
+    synthMusic.master = synthMusic.ctx.createGain();
+    synthMusic.master.gain.value = 0.12;
+    synthMusic.master.connect(synthMusic.ctx.destination);
+  }
+  synthMusic.ctx.resume();
+  synthMusic.playing = true;
+  synthMusic.step = 0;
+  const notes = [164.81,196.00,246.94,293.66,246.94,196.00,220.00,329.63];
+  const tick = () => {
+    if(!synthMusic.playing) return;
+    const ctx = synthMusic.ctx;
+    const now = ctx.currentTime;
+    const note = notes[synthMusic.step % notes.length];
+    playSynthTone(note, now, 0.16, "triangle", 0.42);
+    if(synthMusic.step % 2 === 0) playSynthTone(note/2, now, 0.10, "sine", 0.25);
+    if(synthMusic.step % 4 === 0) playSynthTone(82.41, now, 0.08, "square", 0.18);
+    synthMusic.step++;
+  };
+  tick();
+  synthMusic.timers.push(setInterval(tick, 360));
+  updateSongStatus("Built-in beat playing");
+}
+
+function playSynthTone(freq, when, length, type, gainLevel){
+  const ctx = synthMusic.ctx;
+  if(!ctx || !synthMusic.master) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, when);
+  gain.gain.setValueAtTime(0.0001, when);
+  gain.gain.exponentialRampToValueAtTime(gainLevel, when + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+  osc.connect(gain).connect(synthMusic.master);
+  osc.start(when);
+  osc.stop(when + length + 0.03);
+}
+
+function stopSynthMusic(){
+  synthMusic.playing = false;
+  synthMusic.timers.forEach(clearInterval);
+  synthMusic.timers = [];
+}
+
+// ══════════════════════════════════════════════
 //  WebSocket State
 // ══════════════════════════════════════════════
 let ws=null, myTurn=false, mySymbol="X", onlineReady=false, currentRoomType="online";
@@ -1737,6 +1996,7 @@ const connBadge     = document.getElementById("connBadge");
 function initGame(){
   createBoard();
   boardEl.classList.add("locked");
+  initMusicSystem();
   onModeChange();
   updateOnlineStatus();
   renderHistory();
@@ -1749,6 +2009,12 @@ function initGame(){
 
 function onModeChange(){
   const m=modeSelect.value;
+  if((currentRoomType !== m) && (m === "online" || m === "hotspot") && ws){
+    wsIntentionalClose = true;
+    try{ ws.close(); }catch(e){}
+    ws = null;
+  }
+  if(m === "online" || m === "hotspot") currentRoomType = m;
   document.getElementById("onlineBtn").style.display  = m==="online"  ? "block":"none";
   document.getElementById("hotspotBtn").style.display = m==="hotspot" ? "block":"none";
   diffSelect.style.display = m==="ai" ? "block":"none";
@@ -1759,6 +2025,20 @@ function onModeChange(){
   connBadge.className=""; connBadge.style.display="none";
   updateScoreLabels();
   pauseForRestart();
+}
+
+function switchMultiplayerMode(roomType, openConnect){
+  if(roomType !== "online" && roomType !== "hotspot") return;
+  modeSelect.value = roomType;
+  onModeChange();
+  closeModal("onlineMpOverlay");
+  closeModal("hotspotOverlay");
+  closeModal("settingsOverlay");
+  const status = roomType === "hotspot" ? "📡 Hotspot mode selected" : "🌐 Online mode selected";
+  statusText.textContent = openConnect ? `${status} — connect when ready` : status;
+  if(openConnect){
+    setTimeout(()=>openModal(roomType === "hotspot" ? "hotspotOverlay" : "onlineMpOverlay"), 120);
+  }
 }
 
 function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p); }
@@ -2296,6 +2576,7 @@ function startGame(){
 }
 
 function _doStartGame(){
+  startMusic();
   started=true; gameActive=true; startTurnTimer();
   manualPaused = false;
   boardEl.classList.remove("locked");
@@ -2944,5 +3225,5 @@ window.addEventListener("load", () => {
 });
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a111b7d69fbd033b',t:'MTc4MjM2Njg3Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a111b7d69fbd033b',t:'MTc4MjM2Njg3Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16de143aa04933f',t:'MTc4MzMzMzI1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
